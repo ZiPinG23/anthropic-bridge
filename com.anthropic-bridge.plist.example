@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.anthropic-bridge</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <!-- 运行 which node 查看你的 node 路径 -->
+        <string>/opt/homebrew/bin/node</string>
+        <string>/PATH/TO/anthropic-bridge/server.mjs</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/PATH/TO/anthropic-bridge</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PORT</key>
+        <string>8083</string>
+        <key>BRIDGE_API_KEYS</key>
+        <string>sk-bridge-local</string>
+        <key>COMPANY_BASE_URL</key>
+        <string>https://your-api-gateway.example.com</string>
+        <key>COMPANY_CHAT_PATH</key>
+        <string>/v1/chat/completions</string>
+        <key>COMPANY_API_KEY</key>
+        <string>your-api-key-here</string>
+        <key>COMPANY_AUTH_HEADER</key>
+        <string>Authorization</string>
+        <key>COMPANY_AUTH_PREFIX</key>
+        <string>Bearer </string>
+        <key>COMPANY_EXTRA_HEADERS</key>
+        <string></string>
+        <key>DEFAULT_MODEL</key>
+        <string>Claude-sonnet-4.6</string>
+        <key>MODEL_MAP</key>
+        <string></string>
+        <key>SUPPORTED_MODELS</key>
+        <string>Claude-sonnet-4.6,Claude-opus-4.6-global</string>
+    </dict>
+
+    <!-- 用户登录时自动启动 -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!-- 崩溃后自动重启 -->
+    <key>KeepAlive</key>
+    <true/>
+
+    <!-- 日志文件 -->
+    <key>StandardOutPath</key>
+    <string>/PATH/TO/anthropic-bridge/logs/bridge.stdout.log</string>
+    <key>StandardErrorPath</key>
+    <string>/PATH/TO/anthropic-bridge/logs/bridge.stderr.log</string>
+</dict>
+</plist>

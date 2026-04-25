@@ -21,8 +21,6 @@ cp .env.example .env
 
 # 3. 启动
 ./start.sh
-# 或
-node server.mjs
 ```
 
 ## 配置 Claude Code
@@ -32,68 +30,85 @@ node server.mjs
 ```json
 {
   "env": {
-    "ANTHROPIC_BASE_URL": "http://127.0.0.1:8082",
-    "ANTHROPIC_API_KEY": "sk-bridge-local"
+    "ANTHROPIC_BASE_URL": "http://127.0.0.1:8083",
+    "ANTHROPIC_API_KEY": "sk-bridge-local",
+    "ANTHROPIC_MODEL": "claude-opus-4-6"
   }
 }
-```
-
-或者在 `~/.zshrc` 中：
-
-```bash
-export ANTHROPIC_BASE_URL="http://127.0.0.1:8082"
-export ANTHROPIC_API_KEY="sk-bridge-local"
 ```
 
 然后直接运行 `claude` 即可。
 
 ## 模型映射
 
-Claude Code 发来的 Anthropic 模型名会通过 `MODEL_MAP` 映射到你的上游模型名。
-
-在 `.env` 中配置：
+内置了完整的 Anthropic 模型目录（MODEL_CATALOG），自动映射 Claude Code 请求的各种模型名到你的上游模型。支持通过 `MODEL_MAP` 环境变量自定义覆盖：
 
 ```
-DEFAULT_MODEL=your-default-model
 MODEL_MAP=claude-sonnet-4-6=your-sonnet,claude-opus-4-6=your-opus
 ```
-
-也可以直接在 `server.mjs` 的 `buildModelMap()` 函数中硬编码映射。
 
 ## 支持的端点
 
 | 端点 | 说明 |
 |---|---|
-| `POST /v1/messages` | Anthropic Messages API（支持 `stream: true/false`） |
-| `GET /v1/models` | 模型列表 |
+| `POST /v1/messages` | Anthropic Messages API（支持真流式 SSE） |
+| `GET /v1/models` | 模型列表（含 max_input_tokens / max_output_tokens） |
 | `GET /v1/models/:id` | 单模型查询 |
 | `GET /health` | 健康检查 |
 | `HEAD /` | 连通性检查 |
 
 ## 支持的特性
 
+- **真流式 SSE**：上游 OpenAI SSE → 实时转译为 Anthropic SSE，逐 token 输出
 - Anthropic `system` prompt（字符串和 block 数组格式）
-- `tool_use` / `tool_result` 完整映射（Claude Code 的工具调用）
-- 流式 SSE 响应（`stream: true`）
+- `tool_use` / `tool_result` 完整映射（含流式 tool_calls）
+- 图片转发（base64 和 URL 格式）
 - `x-api-key` 和 `Authorization: Bearer` 双认证
-- URL 查询参数兼容（如 `?beta=true`）
+- 带时间戳的结构化日志
+
+## 后台运行（macOS launchd，推荐）
+
+仓库里已提供模板文件 `com.anthropic-bridge.plist.example`，快速部署：
+
+```bash
+# 1. 复制模板
+cp com.anthropic-bridge.plist.example ~/Library/LaunchAgents/com.anthropic-bridge.plist
+
+# 2. 编辑，替换所有 /PATH/TO/ 和 API 配置
+vim ~/Library/LaunchAgents/com.anthropic-bridge.plist
+
+# 3. 创建日志目录
+mkdir -p logs
+
+# 4. 加载服务（立即启动 + 开机自启）
+launchctl load ~/Library/LaunchAgents/com.anthropic-bridge.plist
+
+# 验证
+curl http://127.0.0.1:8083/health
+```
+
+管理命令：
+
+```bash
+launchctl start com.anthropic-bridge    # 启动
+launchctl stop com.anthropic-bridge     # 停止
+launchctl list | grep anthropic          # 查看状态
+tail -f logs/bridge.stdout.log           # 查看日志
+
+# 修改 plist 后需要先卸载再重新加载
+launchctl unload ~/Library/LaunchAgents/com.anthropic-bridge.plist
+launchctl load ~/Library/LaunchAgents/com.anthropic-bridge.plist
+```
 
 ## 文件说明
 
 | 文件 | 说明 |
 |---|---|
 | `server.mjs` | 桥接服务（单文件，零依赖） |
-| `.env.example` | 配置模板 |
-| `start.sh` | 一键启动脚本 |
+| `.env.example` | 环境变量配置模板 |
+| `com.anthropic-bridge.plist.example` | macOS launchd 服务配置模板 |
+| `start.sh` | 一键启动脚本（开发用） |
 | `package.json` | Node.js 项目描述 |
-
-## 后台运行
-
-```bash
-nohup ./start.sh &
-# 或
-nohup node server.mjs &
-```
 
 ## License
 
